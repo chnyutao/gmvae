@@ -1,6 +1,8 @@
 import grain
 import jax
 import jax.numpy as jnp
+import numpy as np
+from jaxtyping import Array
 from torchvision.datasets import MNIST
 
 
@@ -20,14 +22,28 @@ def make_mnist_dataset(
         The MNIST database of handwritten digits.
     """
 
-    def process_image(image):
-        img = jnp.array(image) / 255.0
-        return img.ravel() if flatten else img[jnp.newaxis, :]
+    def to_numpy(data: tuple) -> tuple:
+        return np.array(data[0]), np.array(data[1])
 
-    def process_label(label):
-        return jax.nn.one_hot(label, num_classes=10) if onehot else jnp.array([label])
+    @jax.jit
+    def to_normalized(data: tuple) -> tuple:
+        x, y = jnp.array(data[0]), jnp.array(data[1])
+        x = x[jnp.newaxis, :] / 255.0
+        return x, y
+
+    @jax.jit
+    def to_flattened(data: tuple) -> tuple:
+        return data[0].ravel(), data[1]
+
+    @jax.jit
+    def to_onehot(data: tuple) -> tuple:
+        return data[0], jax.nn.one_hot(data[1], num_classes=10)
 
     dataset = MNIST(root='./data', train=train, download=True)
-    return grain.MapDataset.source(dataset).map(  # type: ignore
-        lambda data: (process_image(data[0]), process_label(data[1]))
+    return (
+        grain.MapDataset.source(dataset)  # type: ignore
+        .map(to_numpy)
+        .map(to_normalized)
+        .map(to_flattened if flatten else lambda x: x)
+        .map(to_onehot if flatten else lambda x: x)
     )
