@@ -1,3 +1,5 @@
+from functools import partial
+
 import equinox as eqx
 import jax
 import jax.numpy as jnp
@@ -9,7 +11,7 @@ import wandb
 from tqdm.auto import tqdm
 
 from config import Config
-from datasets import make_mnist_dataset
+from dataset import make_mnist_dataset
 from models import GMVAE, MLP
 from models.gmvae import loss_fn
 
@@ -19,8 +21,8 @@ key = jr.key(config.seed)
 wandb.init(project='gmvae', config=config.asdict())
 
 # init dataset
-train_set = make_mnist_dataset(train=True, flatten=True)
-test_set = make_mnist_dataset(train=False, flatten=True)
+train_set = make_mnist_dataset(train=True, flatten=True, batch_size=config.batch_size)
+test_set = make_mnist_dataset(train=False, flatten=True, batch_size=int(1e4))
 
 # init model
 key, ekey, dkey, pkey = jr.split(key, 4)
@@ -53,17 +55,20 @@ model = GMVAE(
 opt = optax.adam(config.lr)
 opt_state = opt.init(eqx.filter(model, eqx.is_array))
 
+
 # main loop
 for _ in tqdm(range(config.epochs)):
     # train
-    for x, _ in train_set.shuffle(config.seed).batch(config.batch_size):
+    for x, _ in train_set:
+        x = jax.device_put(x)
         key, subkey = jr.split(key)
-        [_, metrics], grads = loss_fn(model, x, config.beta, key=subkey)
+        [_, metrics], grads = loss_fn(model, x, config.beta, key=key)
         updates, opt_state = opt.update(grads, opt_state)
         model = eqx.apply_updates(model, updates)
         wandb.log(metrics)
     # test
-    for x, y in test_set.batch(len(test_set)):
+    for x, y in test_set:
+        x, y = jax.device_put(x), jax.device_put(y)
         key, subkey = jr.split(key)
         _, distributions = jax.vmap(model)(x, key=jr.split(key, x.shape[0]))
         y_hat = distributions['logits'].argmax(axis=-1)
@@ -75,8 +80,8 @@ for _ in tqdm(range(config.epochs)):
 
 # plot
 N_PLOTS = 4
-x, _ = next(iter(train_set.batch(N_PLOTS)))
-x_hat = jax.vmap(model)(x, key=jr.split(key, N_PLOTS))[0].clip(0, 1)
+x = next(iter(train_set))[0][:N_PLOTS]
+x_hat = jax.vmap(model)(x, key=jr.split(key, x.shape[0]))[0].clip(0, 1)
 plt.figure(figsize=(4, 2))
 for row, (title, x) in enumerate({'Original': x, 'Reconstruction': x_hat}.items()):
     for col in range(N_PLOTS):
