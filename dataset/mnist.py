@@ -1,16 +1,16 @@
 from typing import Any
 
-import jax_dataloader as jdl
 import numpy as np
 from torchvision.datasets import MNIST
+
+from .dataloader import DataLoader
 
 
 def make_mnist_dataset(
     train: bool = True,
     flatten: bool = False,
     onehot: bool = False,
-    **kwargs: Any,
-) -> jdl.DataLoader:
+) -> DataLoader:
     """Load the MNIST database of handwritten digits.
 
     Args:
@@ -36,4 +36,4 @@ def make_mnist_dataset(
         transform=transform,
         target_transform=target_transform,
     )
-    return jdl.DataLoader(dataset, 'pytorch', shuffle=True, **kwargs)
+    return DataLoader(dataset)

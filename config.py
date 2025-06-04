@@ -7,11 +7,17 @@ class Config:
     batch_size: int = 64
     """Batch size."""
 
-    beta: tuple[int, int] = (1, 1)
+    beta: tuple[float, float] = (1, 1)
     """Weights for categorical/Gaussian KL divergences."""
 
-    epochs: int = 20
+    epochs: int = 50
     """Epochs."""
+
+    encoder: Literal['wide'] | Literal['narrow'] = 'wide'
+    """Encoder outupt width.
+    - If `wide`, output k Gaussians simultaenously (`k * latent_size * 2`);
+    - If `narrow`, output only one Gaussian (`latent_size * 2`).
+    """
 
     k: int = 10
     """Number of Gaussians components."""
@@ -24,9 +30,6 @@ class Config:
 
     prior: Literal['standard'] | Literal['conditional'] = 'conditional'
     """Gaussian prior p(z|y), standard N(0,I) or conditional N(m,s)=f(y)."""
-
-    sampling: Literal['st'] | Literal['gumbel'] = 'gumbel'
-    """Sampling method for discrete latent variables, straight-through or gumbel-softmax."""
 
     seed: int = 42
     """Random seed."""

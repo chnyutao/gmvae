@@ -1,6 +1,8 @@
 from collections.abc import Callable, Sequence
 from itertools import pairwise
+from typing import Any
 
+import equinox as eqx
 import jax
 import jax.random as jr
 from equinox import nn
@@ -9,8 +11,6 @@ from jaxtyping import PRNGKeyArray
 
 class MLP(nn.Sequential):
     """Multi-layer perceptron."""
-
-    layers: nn.Sequential
 
     def __init__(
         self,
@@ -28,7 +28,7 @@ class MLP(nn.Sequential):
             out_size (`int`): Output layer size.
             hidden_sizes (`Sequence[int]`, optional): Hidden layer sizes.
             activation (`Callable`, optional): Activation function. Defaults to `jax.nn.relu`.
-            key (`PRNGKeyArray`, optional): JAX random key.
+            key (`PRNGKeyArray`): JAX random key.
         """
         layers = []
         layer_sizes = (in_size, *hidden_sizes, out_size)
