@@ -16,6 +16,7 @@ class GMEncoder(eqx.Module):
 
     cat_encoder: Callable[..., Array]
     gauss_encoder: Callable[..., Array]
+    sampling: str = eqx.field(static=True)
     tau: float = eqx.field(static=True)
     wide: bool = eqx.field(static=True)
 
@@ -24,6 +25,7 @@ class GMEncoder(eqx.Module):
         cat_encoder: Callable[..., Array],
         gauss_encoder: Callable[..., Array],
         *,
+        sampling: str = 'both',
         tau: float = 1.0,
         wide: bool = False,
     ):
@@ -33,11 +35,13 @@ class GMEncoder(eqx.Module):
         Args:
             cat_encoder (`eqx.Module`): Categorical encoder module.
             gauss_encoder (`eqx.Module`): Gaussian encoder module.
+            sampling (`str`, optional): Discrete latent sampling method. Defaults to `both`.
             tau (`float`, optional): Temperature for gumbel-softmax. Defaults to 1.0.
             wide (`bool`, optional): Wide/narrow encoder. Defaults to `True`.
         """
         self.cat_encoder = cat_encoder
         self.gauss_encoder = gauss_encoder
+        self.sampling = sampling
         self.tau = tau
         self.wide = wide
 
@@ -53,19 +57,27 @@ class GMEncoder(eqx.Module):
             A tuple containing the sampled categorical latent `y`, Gaussian latent `z`, and
             a dictionary of the following format: `{'logits': ..., 'posterior': (mu, std)}`.
         """
-        keys = iter(jr.split(key, 3))
+        ykey, zkey = jr.split(key)
         logits = self.cat_encoder(x)
         # sample y ~ q(y|x)
-        logits = jax.nn.log_softmax(logits)
-        y_soft = jax.nn.softmax((logits + jr.gumbel(next(keys), logits.shape)) / self.tau)
-        y = (jnp.arange(*logits.shape) == y_soft.argmax()).astype(int) + y_soft - sg(y_soft)
+        match self.sampling:
+            case 'gumbel':
+                logits = jax.nn.log_softmax(logits)
+                y = jax.nn.softmax((logits + jr.gumbel(ykey, logits.shape)) / self.tau)
+            case 'st':
+                probs = jax.nn.softmax(logits)
+                y = OneHotCategorical(logits).sample(seed=ykey) + probs - sg(probs)
+            case 'both':
+                logits = jax.nn.log_softmax(logits)
+                y_soft = jax.nn.softmax((logits + jr.gumbel(ykey, logits.shape)) / self.tau)
+                y = jnp.zeros_like(logits).at[logits.argmax()].set(1) + y_soft - sg(y_soft)
         # sample z ~ q(z|x,y)
         if self.wide:
             gaussian = (y * self.gauss_encoder(x).reshape(-1, y.shape[0])).sum(axis=-1)
         else:
             gaussian = self.gauss_encoder(jnp.concat((x, y)))
         mu, log_std = jnp.split(gaussian, 2)
-        z = mu + jnp.exp(log_std) * jr.normal(next(keys), mu.shape)
+        z = mu + jnp.exp(log_std) * jr.normal(zkey, mu.shape)
         # return
         return y, z, {'logits': logits, 'posterior': (mu, jnp.exp(log_std))}
 

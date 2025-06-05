@@ -31,6 +31,12 @@ class Config:
     prior: Literal['standard'] | Literal['conditional'] = 'conditional'
     """Gaussian prior p(z|y), standard N(0,I) or conditional N(m,s)=f(y)."""
 
+    sampling: Literal['gumbel'] | Literal['st'] | Literal['both'] = 'gumbel'
+    """Sampling method for discrete latent variables.
+    - If `gumbel`, use gumbel-softmax approximation `y = gumbel-softmax(probs)`;
+    - If `st`, use straight-through gradient estimation `y = sample + probs - sg(probs)`;
+    - If `both`, use straight-through gumbel-softmax trick `y = sample + y_soft - sg(y_soft)`."""
+
     seed: int = 42
     """Random seed."""
 

@@ -39,6 +39,7 @@ model = GMVAE(
         if config.prior == 'conditional'
         else lambda _: jnp.zeros((config.latent_size * 2,))
     ),
+    sampling=config.sampling,
     tau=config.tau,
     wide=config.encoder == 'wide',
 )
