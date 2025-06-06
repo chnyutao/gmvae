@@ -25,6 +25,9 @@ class Config:
     latent_size: int = 32
     """Dimensionality of each Gaussian."""
 
+    likelihood: Literal['gaussian'] | Literal['bernoulli'] = 'gaussian'
+    """Likelihood p(x|z), Gaussian N(x_hat,I) or Bernoulli Ber(x_hat)."""
+
     lr: float = 1e-4
     """Learning rate."""
 

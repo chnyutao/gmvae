@@ -6,7 +6,7 @@ import equinox as eqx
 import jax
 import jax.numpy as jnp
 import jax.random as jr
-from distrax import MultivariateNormalDiag, OneHotCategorical
+from distrax import Bernoulli, MultivariateNormalDiag, OneHotCategorical
 from jax.lax import stop_gradient as sg
 from jaxtyping import Array, PRNGKeyArray, PyTree
 
@@ -162,12 +162,19 @@ def loss_fn(
     x: Array,
     *,
     beta: tuple[float, float],
+    likelihood: str,
     key: PRNGKeyArray,
 ) -> tuple[Array, dict[str, Array]]:
     """negative evidence lower bound (ELBO)."""
-    x_hat, dists = jax.vmap(model)(x, key=jr.split(key, x.shape[0]))
+    batch_size = x.shape[0]
+    x_hat, dists = jax.vmap(model)(x, key=jr.split(key, batch_size))
     # reconstruction error
-    reconst = jnp.sum((x - x_hat) ** 2, axis=-1).mean()
+    x, x_hat = x.reshape(batch_size, -1), x_hat.reshape(batch_size, -1)
+    match likelihood:
+        case 'gaussian':
+            reconst = -MultivariateNormalDiag(x_hat, jnp.ones_like(x)).log_prob(x).mean()
+        case 'bernoulli':
+            reconst = -Bernoulli(x_hat).log_prob(x).sum(axis=-1).mean()
     # categorical entropy
     logits = jax.nn.softmax(dists['logits'])
     nent = jnp.sum(logits * jnp.log(logits), axis=-1).mean()

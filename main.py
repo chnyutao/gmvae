@@ -20,8 +20,9 @@ key = jr.key(config.seed)
 wandb.init(project='gmvae', config=config.asdict())
 
 # init dataset
-train_set = make_mnist_dataset(train=True, flatten=True)
-test_set = make_mnist_dataset(train=False, flatten=True)
+binarize = config.likelihood == 'bernoulli'
+train_set = make_mnist_dataset(train=True, binarize=binarize, flatten=True)
+test_set = make_mnist_dataset(train=False, binarize=binarize, flatten=True)
 
 # init model
 key, cekey, gekey, dkey, pkey = jr.split(key, 5)
@@ -71,7 +72,7 @@ def train_step(
         A tuple containing the updated model, the updated optimizer state,
         and a dictionary of training metrics.
     """
-    [_, metrics], grads = loss_fn(model, x, beta=config.beta, key=key)
+    [_, metrics], grads = loss_fn(model, x, beta=config.beta, likelihood=config.likelihood, key=key)
     updates, opt_state = opt.update(grads, opt_state)
     model = eqx.apply_updates(model, updates)
     return model, opt_state, metrics
