@@ -28,8 +28,8 @@ key, cekey, gekey, dkey, pkey = jr.split(key, 5)
 model = GMVAE(
     cat_encoder=MLP(784, config.k, hidden_sizes=(200, 200), key=cekey),
     gauss_encoder=MLP(
-        784 + (0 if config.encoder == 'wide' else config.k),
-        config.latent_size * 2 * (config.k if config.encoder == 'wide' else 1),
+        784 + (0 if config.independent else config.k),
+        config.latent_size * 2 * (config.k if config.independent else 1),
         hidden_sizes=(200, 200),
         key=gekey,
     ),
@@ -39,9 +39,9 @@ model = GMVAE(
         if config.prior == 'conditional'
         else lambda _: jnp.zeros((config.latent_size * 2,))
     ),
+    independent=config.independent,
     sampling=config.sampling,
     tau=config.tau,
-    wide=config.encoder == 'wide',
 )
 
 # init optimizer
@@ -71,7 +71,7 @@ def train_step(
         A tuple containing the updated model, the updated optimizer state,
         and a dictionary of training metrics.
     """
-    [_, metrics], grads = loss_fn(model, x, config.beta, key=key)
+    [_, metrics], grads = loss_fn(model, x, beta=config.beta, key=key)
     updates, opt_state = opt.update(grads, opt_state)
     model = eqx.apply_updates(model, updates)
     return model, opt_state, metrics

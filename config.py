@@ -13,10 +13,10 @@ class Config:
     epochs: int = 50
     """Epochs."""
 
-    encoder: Literal['wide'] | Literal['narrow'] = 'wide'
-    """Encoder outupt width.
-    - If `wide`, output k Gaussians simultaenously (`k * latent_size * 2`);
-    - If `narrow`, output only one Gaussian (`latent_size * 2`).
+    independent: bool = True
+    """Gaussian mixture encoder output specification.
+    - If `True`, output k Gaussians independent given x;
+    - If `False`, output one Gaussian dependent on x and y.
     """
 
     k: int = 10
