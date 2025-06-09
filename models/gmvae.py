@@ -176,8 +176,8 @@ def loss_fn(
         case 'bernoulli':
             reconst = -Bernoulli(x_hat).log_prob(x).sum(axis=-1).mean()
     # categorical entropy
-    logits = jax.nn.softmax(dists['logits'])
-    nent = jnp.sum(logits * jnp.log(logits), axis=-1).mean()
+    logits = jax.nn.log_softmax(dists['logits'])
+    nent = jnp.sum(logits * jnp.exp(logits), axis=-1).mean()
     # gaussian kld(q(z|x,y) || p(z|y))
     posterior = MultivariateNormalDiag(*dists['posterior'])
     prior = MultivariateNormalDiag(*dists['prior'])
