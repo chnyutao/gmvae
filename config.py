@@ -25,16 +25,16 @@ class Config:
     latent_size: int = 32
     """Dimensionality of each Gaussian."""
 
-    likelihood: Literal['gaussian'] | Literal['bernoulli'] = 'gaussian'
+    likelihood: Literal['gaussian', 'bernoulli'] = 'gaussian'
     """Likelihood p(x|z), Gaussian N(x_hat,I) or Bernoulli Ber(x_hat)."""
 
     lr: float = 1e-4
     """Learning rate."""
 
-    prior: Literal['standard'] | Literal['conditional'] = 'conditional'
+    prior: Literal['standard', 'conditional'] = 'conditional'
     """Gaussian prior p(z|y), standard N(0,I) or conditional N(m,s)=f(y)."""
 
-    sampling: Literal['gumbel'] | Literal['st'] | Literal['both'] = 'gumbel'
+    sampling: Literal['gumbel', 'st', 'both'] = 'gumbel'
     """Sampling method for discrete latent variables.
     - If `gumbel`, use gumbel-softmax approximation `y = gumbel-softmax(probs)`;
     - If `st`, use straight-through gradient estimation `y = sample + probs - sg(probs)`;
