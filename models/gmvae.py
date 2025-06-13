@@ -172,7 +172,7 @@ def loss_fn(
     x, x_hat = x.reshape(batch_size, -1), x_hat.reshape(batch_size, -1)
     match likelihood:
         case 'gaussian':
-            reconst = -MultivariateNormalDiag(x_hat, jnp.ones_like(x)).log_prob(x).mean()
+            reconst = jnp.sum((x - x_hat) ** 2, axis=-1).mean()
         case 'bernoulli':
             reconst = -Bernoulli(x_hat).log_prob(x).sum(axis=-1).mean()
     # categorical entropy
