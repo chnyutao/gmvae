@@ -15,7 +15,6 @@ dependencies = [
 
 [dependency-groups]
 data = [
-    "grain>=0.2.9",
     "jax-dataloader>=0.1.3",
     "torch>=2.7.0",
     "torchvision>=0.22.0",
