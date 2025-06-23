@@ -49,10 +49,10 @@ class CatEncoder(eqx.Module):
                 y = jax.nn.softmax((logits + jr.gumbel(key, logits.shape)) / self.tau)
             case 'st':
                 probs = jnp.exp(logits)
-                y = OneHotCategorical(logits).sample(seed=key) + probs - sg(probs)
+                y = probs - sg(probs) + OneHotCategorical(logits).sample(seed=key)
             case 'both':
-                y_soft = jax.nn.softmax((logits + jr.gumbel(key, logits.shape)) / self.tau)
-                y = jnp.zeros_like(logits).at[logits.argmax()].set(1) + y_soft - sg(y_soft)
+                y = jax.nn.softmax((logits + jr.gumbel(key, logits.shape)) / self.tau)
+                y = y - sg(y) + jax.nn.one_hot(y.argmax(), *y.shape)
         # return
         return y, {'logits': logits}
 
