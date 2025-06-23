@@ -13,7 +13,7 @@ class Config:
     epochs: int = 50
     """Epochs."""
 
-    independent: bool = True
+    independent: bool = False
     """Gaussian mixture encoder output specification.
     - If `True`, output k Gaussians independent given x;
     - If `False`, output one Gaussian dependent on x and y.
@@ -43,7 +43,7 @@ class Config:
     seed: int = 42
     """Random seed."""
 
-    tau: float = 1.0
+    tau: float = 0.1
     """Gumbel softmax temperature."""
 
     def asdict(self) -> dict:
