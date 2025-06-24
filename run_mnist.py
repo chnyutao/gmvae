@@ -72,7 +72,13 @@ def train_step(
         A tuple containing the updated model, the updated optimizer state,
         and a dictionary of training metrics.
     """
-    [_, metrics], grads = loss_fn(model, x, beta=config.beta, likelihood=config.likelihood, key=key)
+    [_, metrics], grads = loss_fn(
+        model,
+        x,
+        beta=config.beta,
+        likelihood=config.likelihood,
+        key=key,
+    )
     updates, opt_state = opt.update(grads, opt_state)
     model = eqx.apply_updates(model, updates)
     return model, opt_state, metrics
@@ -113,11 +119,7 @@ for _ in tqdm(range(config.epochs)):
     # train
     for x, _ in train_set.shuffle().batch(config.batch_size).collect(fn):
         key, subkey = jr.split(key)
-        [
-            model,
-            opt_state,
-            metrics,
-        ] = train_step(model, x, opt_state, key=subkey)
+        [model, opt_state, metrics] = train_step(model, x, opt_state, key=subkey)
         wandb.log(metrics)
     # evaluation
     for x, y in test_set.batch(10_000).collect(fn):
