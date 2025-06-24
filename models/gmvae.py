@@ -74,7 +74,13 @@ class GaussEncoder(eqx.Module):
         self.nn = nn
         self.independent = kwargs.get('independent', True)
 
-    def __call__(self, x: Array, y: Array, *, key: PRNGKeyArray) -> tuple[Array, PyTree]:
+    def __call__(
+        self,
+        x: Array,
+        y: Array,
+        *,
+        key: PRNGKeyArray,
+    ) -> tuple[Array, PyTree]:
         """
         Forward the input array through the Gaussian encoder.
 
@@ -119,11 +125,11 @@ class GMVAE(eqx.Module):
         Initialize a Gaussian mixture variational auto-encoder (VAE).
 
         Args:
-            cat_encoder (`eqx.Module`): Categorical encoder module.
-            gauss_encoder (`eqx.Module`): Gaussian encoder module.
-            decoder (`eqx.Module`): Decoder module.
-            prior (`eqx.Module`): Prior module.
-            **kwargs (`Any`): Extra keyword arguments for `CatEncoder` and `GaussEncoder`.
+            cat_encoder (`Callable[..., Array]`): Categorical encoder module.
+            gauss_encoder (`Callable[..., Array]`): Gaussian encoder module.
+            decoder (`Callable[..., Array]`): Decoder module.
+            prior (`Callable[..., Array]`): Prior module.
+            **kwargs (`Any`): Keyword arguments for `CatEncoder` and `GaussEncoder`.
         """
         self.cat_encoder = CatEncoder(cat_encoder, **kwargs)
         self.gauss_encoder = GaussEncoder(gauss_encoder, **kwargs)
@@ -140,7 +146,8 @@ class GMVAE(eqx.Module):
 
         Returns:
             A tuple containing the decoded output array `x_hat`, along with a dictionary
-            of the following format: `{'logits': ..., 'prior': (mu, std), 'posterior': (mu, std)}`.
+            of the following format:
+            `{'logits': ..., 'prior': (mu, std), 'posterior': (mu, std)}`.
         """
         ykey, zkey = jr.split(key)
         y, logits = self.cat_encoder(x, key=ykey)
