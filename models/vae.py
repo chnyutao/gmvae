@@ -40,6 +40,18 @@ class VAE(eqx.Module):
         z = mu + jnp.exp(log_std) * jr.normal(key, mu.shape)
         return self.decoder(z), (mu, jnp.exp(log_std))
 
+    def encode(self, x: Array) -> PyTree:
+        """Map the input to a latent Gaussian posterior.
+
+        Args:
+            x (`Array`): Input array.
+
+        Returns:
+            Parameters of the Guassian posterior `(mu, std)`.
+        """
+        mu, log_std = jnp.split(self.encoder(x), 2)
+        return (mu, jnp.exp(log_std))
+
 
 @eqx.filter_jit
 @partial(eqx.filter_value_and_grad, has_aux=True)
@@ -62,8 +74,9 @@ def loss_fn(
         case 'bernoulli':
             reconst = -Bernoulli(x_hat).log_prob(x).sum(axis=-1).mean()
     # kld(q(z|x,y) || p(z|y))
-    posterior = MultivariateNormalDiag(*dists)
-    prior = MultivariateNormalDiag()  # N(0,I)
+    mu, std = dists
+    posterior = MultivariateNormalDiag(mu, std)
+    prior = MultivariateNormalDiag(jnp.zeros_like(mu), jnp.ones_like(std))
     kld = posterior.kl_divergence(prior).mean()
     # return loss + metrics
     loss = reconst + beta * kld
