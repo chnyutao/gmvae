@@ -6,4 +6,7 @@ For interested readers, this repository provides a fast (re-)implementation of g
 
 With suitable choices of hyperparameters, after training for 1k epochs, the model could achieve 87.76% clustering accuracy (purity), which is on par with the numbers reported in the original blog post.
 
+![wandb purity plot](https://github.com/user-attachments/assets/3981cca1-d882-4f10-8245-458e7be9bb65)
+
+
 [^1]: Gaussian Mixture VAE, https://ruishu.io/2016/12/25/gmvae/
